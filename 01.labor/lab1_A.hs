@@ -1,3 +1,4 @@
+import System.Posix.Internals (lstat)
 -- I. Könyvtárfüggvények használata nélkül, definiáljuk azt a függvényt, amely meghatározza
 
 -- - két szám összegét, különbségét, szorzatát, hányadosát, osztási maradékát,
@@ -63,15 +64,64 @@ min_ a b
 -- II. Könyvtárfüggvények használata nélkül, illetve halmazkifejezéseket alkalmazva, definiáljuk azt a függvényt, amely meghatározza:
 
 -- - az első n természetes szám negyzetgyökét,
+negyzetgyokN n = [sqrt i | i <- [1..n]]
+
 -- - az első n négyzetszámot,
+negyzetN n = [i*i | i <- [1..n]]
+
 -- - az első n természetes szám köbét,
+kobN n = [i^3 | i <- [1..n]]
+
 -- - az első n olyan természetes számot, amelyben nem szerepelnek a négyzetszámok,
+nemNegyzetN n = [ i | i <- [1..n], (sqrt i * sqrt i)/= i]
+
 -- - x hatványait adott n-ig,
+xHatvanyN x n = [ x^i | i <- [1..n]]
+
 -- - egy szám páros osztóinak listáját,
+osztokN n = [i | i <- [1 .. n], n `mod` i == 0, i `mod` 2 == 0]
+
+osztokN2 n = [i | i <- [2, 4 .. n], n `mod` i == 0]
+
 -- - n-ig a prímszámok listáját,
+osztok n = [i | i <- [1..n], n `mod` i == 0]
+
+primszam n = osztok n == [1, n]
+
+primszamokN n = [ i | i <- [2 .. n], primszam i]
+
+primszamokN2 n =[ i | i <- [2..n], primszamL i]
+  where
+    primszamL n = osztokL n == [1, n]
+    osztokL n = [i | i <- [1..n], n `mod` i == 0]
+
+
 -- - n-ig az összetett számok listáját,
+osszetettN n = [i | i <- [0..n], not (primszam i)]
+
 -- - n-ig a páratlan összetett számok listáját,
+paratlanOsszetettN n = [i | i <- [0..n], mod i 2 == 1, not (primszam i)]
+
 -- - az n-nél kisebb Pitágorászi számhármasokat,
+pitagorasz n = [(a,b,c) | c <- [1 .. n], b <- [1 .. c], a <- [1 .. b], a*a + b*b == c*c]
+
 -- - a következő listát: $$[(\texttt{a},0), (\texttt{b},1),\ldots, (\texttt{z}, 25)]$$,
+betuSzam = zip ['a' .. 'z'][0 .. 25]
+--fontos ZIP
+
 -- - a következő listát: $$[(0, 5), (1, 4), (2, 3), (3, 2), (4, 1), (5, 0)]$$, majd általánosítsuk a feladatot.
+szamok1 = zip [0 .. 5][5, 4 .. 0]
+
+szamok2 n = zip [0 .. n][n, n-1 .. 0]
+
 -- - azt a listát, ami felváltva tartalmaz True és False értékeket.
+tfLs n = take n ls
+  where
+    ls = [True, False] ++ ls
+--fontos TAKE, Végtelen lista
+
+
+main :: IO()
+main = do
+  putStrLn "x hatvany n"
+  print (xHatvanyN 5 3)
