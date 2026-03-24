@@ -1,4 +1,9 @@
 import System.Posix.Internals (lstat)
+import Control.Monad (when)
+import Data.Maybe (listToMaybe)
+import Data.List (maximumBy, sort)
+import Data.Ord (comparing)
+
 -- # 4. labor
 
 -- I. Definiáljuk azt a Haskell-listát, amely tartalmazza:
@@ -45,15 +50,77 @@ maxParatlanOsztok n = maximum [i | i <- [1 .. n], mod n i == 0, odd i]
 maxParatlanOsztok2 n = last [i | i <- [1 .. n], mod n i == 0, odd i]
 
 -- - meghatározza, hogy egy tízes számrendszerbeli szám p számrendszerben, hány számjegyet tartalmaz,
+decP x p
+    | x < p = [x]
+    | otherwise = decP (div x p) p ++ [mod x p]
 
+decPSzam x p = myLength(decP x p)
+    where
+        myLength [] = 0
+        myLength (_:ls) = 1 + myLength ls
+
+decPSzam2 x p = foldl (\res i -> res +1) 0 (decP x p)
 
 -- - meghatározza, hogy egy tízes számrendszerbeli szám p számrendszerbeli alakjában melyik a legnagyobb számjegy,
+decPMax x p = maximum (decP x p)
+
 -- - meghatározza az $a$ és $b$ közötti Fibonacci számokat, $a > 50$.
+fibo a b = filter (\x -> x > a && x < b)(fibo2 0 1 0)
+    where
+        fibo2 a1 b1 res
+            | res < b = res : fibo2 b1 res (res + b1)
+            | otherwise = [res]
 
 -- III. Könyvtárfüggvények használata nélkül írjuk meg azt a Haskell függvényt, amely
 
 -- - meghatározza egy lista pozitív elemeinek átlagát,
+atlag ls = (sum ls) / fromIntegral (length ls)
+
+pozitivAtlag ls = atlag [x | x <- ls, x > 0]
+
+pozitivAtlag2 ls = (atlag . filter (> 0)) ls
+
+pozitivAtlag3 ls = (sum ls1) / fromIntegral (length ls1)
+    where
+        ls1 = filter (>0) ls
+
+
 -- - meghatározzuk azt a listát, amely tartalmazza az eredeti lista minden n-ik elemét,
+listaN ls n = [i | (idx, i) <- zip [1..] ls, mod i n == 0]
+
+listaN2 ls n i
+    | i-1>= length ls = []
+    | otherwise = ls !! (i-1) : listaN2 ls n (i+n)
+
+
 -- - tükrözi egy lista elemeit,
+tukroz ls = reverse ls
+
+-- - tükrözi egy lista elemeit, egyesével
+tukrozEgyesevel ls = map (reverse . show) ls
+
+-- - tükrözi egy lista elemeit, egyesével és legyen int a végén1
+tukrozEgyesevel2 ls = map (\x -> read x :: Int) $ map (reverse . show) ls
+
 -- - két módszerrel is meghatározza egy lista legnagyobb elemeinek pozícióit: a lista elemeit kétszer járja be, illetve úgy hogy a lista elemeit csak egyszer járja be,
+maxElemPoz ls = [idx | (idx,i) <- zip [0..] ls, i == myMax]
+    where
+        myMax = maximum ls
+
+maxElemPoz2 (x :ls) = foldl aux (x, [0]) (zip ls [1..])
+    where
+        aux (currentMax, positions) (elem, i)
+            | elem > currentMax = (elem, [i])
+            | elem == currentMax = (elem, i:positions)
+            | otherwise = (currentMax, positions)
+
 -- - meghatározza egy lista leggyakrabban előforduló elemét.
+--elof ls = maxElofElem
+    --where
+       -- maxElofSzam = maximum $ map length $ (group . sort) ls
+       -- ls2 = map (\x -> (head x, lenght x)) $ (group . sort) ls
+       -- maxElofElem = filter (\x -> snd x == maxElofSzam) ls2
+
+
+leggyakoribb2[] = error "ures lista"
+leggyakoribb2 ls = head $ maximumBy (comparing length) group $ sort ls
