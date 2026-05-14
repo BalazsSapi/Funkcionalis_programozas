@@ -1,3 +1,6 @@
+import Data.List
+import Data.Char (isAlpha, isUpper)
+
 -- # 9. labor
 
 -- I. Formázzuk egy adott szövegállomány tartalmát a következőképpen: azok után az írásjelek után, amelyek benne vannak a $\{.,!?;\}$ halmazban szigorúan egy szóközt tegyünk, hagyjunk.
@@ -18,12 +21,6 @@ mainI = do
 
 -- II. Az [iban.txt](https://www.ms.sapientia.ro/~mgyongyi/Funk_Log/iban.txt) állomány IBAN kódokat tartalmaz. Írjunk egy-egy Haskell függvényt, amely
 
-mainII = do
-    szoveg <- readFile "iban.txt"
-    let sorokLista = lines szoveg
-    mapM_ putStrLn sorokLista
-
-
 -- - beolvassa, majd rendezi az állományban levő adatokat ábécé sorrendbe,
 -- - bináris keresést alkalmazva ellenőrzi, hogy egy megadott IBAN kód szerepel-e az adatok között,
 -- - átírja egy okIban.txt állományba azokat az IBAN kódokat, amelyek megfelelő formátumúak. Egy IBAN kód akkor tekinthető megfelelő formátumúnak
@@ -43,6 +40,45 @@ mainII = do
 --   - helyettesítés:
 --     $$32142829\quad 12345698765432\quad 1611\quad 82$$
 --   - ellenőrzés: $$3214282912345698765432161182 \bmod 97 = 1$$
+
+binarySearch :: Ord a => a -> [a] -> Bool
+binarySearch _ [] = False
+binarySearch x xs =
+    let mid = length xs `div` 2
+        pivot = xs !! mid
+    in case compare x pivot of
+        EQ -> True
+        LT -> binarySearch x (take mid xs)
+        GT -> binarySearch x (drop (mid + 1) xs)
+
+-- megfeleloFormatum iban hosszList =
+--     (null (filter (\c -> not (isUpper c) && not (isDigit c)))) &&
+--     (length iban == hossz) &&
+--     (mod atcsoportositottHelyettesitettSzam 97 == 1)
+--     where
+--         atcsoportositott = drop 4 iban ++ take 4 iban
+--         helyettesitett = concatMap (\c -> if isDigit c then [c] else show (ord c - ord 'A' + 10)) atcsoportositott
+--         atcsoportositottHelyettesitettSzam = read helyettesitett :: Integer
+--         hossz = case find (\(orszag, _) -> orszag == take 2 iban) hosszList of
+--             Just (_, h) -> h
+--             Nothing -> 0
+
+            
+
+mainII = do
+    szoveg <- readFile "iban.txt"
+    let sorokLista = lines szoveg
+    let sorokListaTrimed = map (filter (/='\r')) sorokLista
+    let rendezettLista = sort sorokListaTrimed
+    -- print rendezettLista
+    -- print (binarySearch "HU421177301611101800000000" rendezettLista)
+    ibanHosszString <- readFile "ibanLength.txt"
+    let ibanHosszLista = map (filter (/='\r')) (lines ibanHosszString)
+    let hosszList = map (\sor -> zip (words sor)) ibanHosszLista
+    print ibanHosszLista
+    --mapM_ (\(orszag, hossz) -> putStrLn (orszag ++ " " ++ hossz)) hosszList
+    --let helyesIbanok = filter (megfeleloFormatum hosszList) rendezettLista
+
 
 -- III. Egy szövegállományban egy adott személyről következő adatok vannak eltárolva: vezetéknév, keresztnév, születési dátum. Hozzuk létre a következő típusú adatszerkezeteket, majd olvassuk ki az adatokat az állományból és állapítsuk meg mindegyik személyről, hogy a hét milyen napján született és mikor van a névnapja. A névnapok megállapításához használhatjuk a [névnapokat](https://www.ms.sapientia.ro/~mgyongyi/Funk_Log/nevnapok.txt) tartalmazó szövegállományt.
 
