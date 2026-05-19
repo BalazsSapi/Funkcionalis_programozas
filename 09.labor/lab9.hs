@@ -1,10 +1,10 @@
 import Data.List
-import Data.Char (isAlpha, isUpper)
+import Data.Char (isAlpha, isUpper, isDigit, ord)
 
 -- # 9. labor
 
 -- I. Formázzuk egy adott szövegállomány tartalmát a következőképpen: azok után az írásjelek után, amelyek benne vannak a $\{.,!?;\}$ halmazban szigorúan egy szóközt tegyünk, hagyjunk.
-fugv1 szoveg n 
+fugv1 szoveg n
     | length szoveg <= n = szoveg
     | otherwise = fugv1 (marJo ++ ujEleje ++ ujVege) (n + (length ujEleje) + 2)
         where
@@ -50,20 +50,19 @@ binarySearch x xs =
         EQ -> True
         LT -> binarySearch x (take mid xs)
         GT -> binarySearch x (drop (mid + 1) xs)
+megfeleloFormatum hosszList iban =
+    not (any (\c -> not (isUpper c) && not (isDigit c)) iban) &&
+    (length iban == hossz) &&
+    (mod atcsoportositottHelyettesitettSzam 97 == 1)
+    where
+        atcsoportositott = drop 4 iban ++ take 4 iban
+        helyettesitett = concatMap (\c -> if isDigit c then [c] else show (ord c - ord 'A' + 10)) atcsoportositott
+        atcsoportositottHelyettesitettSzam = read helyettesitett :: Integer
+        hossz = case find (\(orszag, _) -> orszag == take 2 iban) hosszList of
+            Just (_, h) -> h
+            Nothing -> 0
 
--- megfeleloFormatum iban hosszList =
---     (null (filter (\c -> not (isUpper c) && not (isDigit c)))) &&
---     (length iban == hossz) &&
---     (mod atcsoportositottHelyettesitettSzam 97 == 1)
---     where
---         atcsoportositott = drop 4 iban ++ take 4 iban
---         helyettesitett = concatMap (\c -> if isDigit c then [c] else show (ord c - ord 'A' + 10)) atcsoportositott
---         atcsoportositottHelyettesitettSzam = read helyettesitett :: Integer
---         hossz = case find (\(orszag, _) -> orszag == take 2 iban) hosszList of
---             Just (_, h) -> h
---             Nothing -> 0
 
-            
 
 mainII = do
     szoveg <- readFile "iban.txt"
@@ -74,13 +73,17 @@ mainII = do
     -- print (binarySearch "HU421177301611101800000000" rendezettLista)
     ibanHosszString <- readFile "ibanLength.txt"
     let ibanHosszLista = map (filter (/='\r')) (lines ibanHosszString)
-    let hosszList = map (\sor -> zip (words sor)) ibanHosszLista
-    print ibanHosszLista
-    --mapM_ (\(orszag, hossz) -> putStrLn (orszag ++ " " ++ hossz)) hosszList
-    --let helyesIbanok = filter (megfeleloFormatum hosszList) rendezettLista
+    let hosszList = map (\sor -> words sor) ibanHosszLista
+    let hosszListTuple = map (\sor -> (head sor, read (last sor) :: Int)) hosszList
+    --print hosszListTuple
+    let helyesIbanok = filter (megfeleloFormatum hosszListTuple) rendezettLista
+    writeFile "helyesIbanok.txt" (unlines helyesIbanok)
 
 
--- III. Egy szövegállományban egy adott személyről következő adatok vannak eltárolva: vezetéknév, keresztnév, születési dátum. Hozzuk létre a következő típusú adatszerkezeteket, majd olvassuk ki az adatokat az állományból és állapítsuk meg mindegyik személyről, hogy a hét milyen napján született és mikor van a névnapja. A névnapok megállapításához használhatjuk a [névnapokat](https://www.ms.sapientia.ro/~mgyongyi/Funk_Log/nevnapok.txt) tartalmazó szövegállományt.
+-- III. Egy szövegállományban egy adott személyről következő adatok vannak eltárolva: vezetéknév, keresztnév, születési dátum.
+-- Hozzuk létre a következő típusú adatszerkezeteket, majd olvassuk ki az adatokat az állományból és állapítsuk meg mindegyik személyről,
+-- hogy a hét milyen napján született és mikor van a névnapja. A névnapok megállapításához használhatjuk a
+-- [névnapokat](https://www.ms.sapientia.ro/~mgyongyi/Funk_Log/nevnapok.txt) tartalmazó szövegállományt.
 
 -- ```haskell
 -- data Datum = Datum {
@@ -95,3 +98,37 @@ mainII = do
 --   szdatum :: Datum
 -- } deriving (Show)
 -- ```
+
+
+data Datum = Datum {
+  nap :: Int,
+  honap:: Int,
+  ev :: Int
+} deriving (Show)
+
+data Szemely = Szemely {
+  vnev :: [Char],
+  knev :: [Char],
+  szdatum :: Datum
+} deriving (Show)
+
+-- ??? ....
+datumToDayOfWeek = \ev honap nap ->
+    let k = ev `mod` 100
+        j = ev `div` 100
+        m = if honap <= 2 then honap + 12 else honap
+        d = nap
+    in (d + (13 * (m + 1)) `div` 5 + k + (k `div` 4) + (j `div` 4) - (2 * j)) `mod` 7
+mainIII = do
+    szoveg <- readFile "szemelyek.txt"
+    let sorokLista = lines szoveg
+    let sorokListaTrimed = map (filter (/='\r')) sorokLista
+    let szemelyek = map (\sor -> let adatok = words sor in
+            Szemely (head adatok) (adatok !! 1)
+            (Datum (read (adatok !! 4) :: Int) (read (adatok !! 3) :: Int) (read (adatok !! 2) :: Int))) sorokListaTrimed
+    --print szemelyek
+
+    let milyenNapokonSzulettek = map (\sz  -> let datum = szdatum sz in
+            let napSzam = datumToDayOfWeek (ev datum) (honap datum) (nap datum) in
+            (vnev sz, knev sz, napSzam)) szemelyek
+    print milyenNapokonSzulettek
